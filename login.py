@@ -1,23 +1,24 @@
 import json
 
-user_file = "user.json"
+USER_FILE = "user.json"
 
 
 class User:
     """
-    Manage user registration, login, and logout.
-    Store user credentials in a JSON file for persistence.
+    Manage user authentication and balance tracking with persistent storage.
     """
+
     def __init__(self):
-        self.users = self.load_users()  # Load existing users
-        self.logged_in_user = None  # Track the current user session
+        self.users = self.load_users()  # Load user credentials
+        self.logged_in_user = None  # Track active session
+        self.balances = {}  # Store user balances
 
     def load_users(self):
         """
-        oad user data from file, return empty dict if file is missing or invalid
-        ."""
+        Load user data from file, return empty dict if missing or invalid.
+        """
         try:
-            with open(user_file, "r") as f:
+            with open(USER_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
@@ -26,40 +27,75 @@ class User:
         """
         Save current user data to file.
         """
-        with open(user_file, "w") as f:
+        with open(USER_FILE, "w", encoding="utf-8") as f:
             json.dump(self.users, f, indent=4)
 
-    def register(self, username, password):
+    def register(self, username, password, initial_deposit):
         """
-        Register new user if username is not taken.
+        Register a new user with an initial deposit if the username is available.
         """
         if username in self.users:
-            print("This user name has been used.")
+            print("Error: Username already taken.")
             return False
 
         self.users[username] = password
+        self.balances[username] = initial_deposit  # Store initial balance
         self.save_users()
-        print("Register success!")
+        print("Registration successful.")
         return True
 
     def login(self, username, password):
         """
-        Authenticate user credentials and set session.
+        Authenticate user and set session.
         """
-        if username in self.users and self.users[username] == password:
+        if self.users.get(username) == password:
             self.logged_in_user = username
-            print(f"Login success! Welcome, {username}!")
+            print(f"Login successful. Welcome, {username}!")
             return True
-        else:
-            print("Incorrect username or password")
-            return False
+        print("Error: Invalid username or password.")
+        return False
 
     def logout(self):
         """
-        Clear current session if a user is logged in.
+        Clear session if a user is logged in.
         """
         if self.logged_in_user:
             print(f"User {self.logged_in_user} logged out.")
             self.logged_in_user = None
         else:
-            print("There is no user logged in.")
+            print("No active user session.")
+
+    def check_balance(self):
+        return self.balances.get(self.logged_in_user, 0)
+
+    def deposit(self, amount):
+        if self.logged_in_user:
+            self.balances[self.logged_in_user] += amount
+            print(f"Deposited {amount}. New balance: {self.check_balance()}")
+        else:
+            print("Error: No active session.")
+
+    def withdraw(self, amount):
+        if self.logged_in_user:
+            if self.balances[self.logged_in_user] - amount >= -1500:
+                self.balances[self.logged_in_user] -= amount
+                print(f"Withdrawal successful. New balance: {self.check_balance()}")
+            else:
+                print("Error: Insufficient funds.")
+        else:
+            print("Error: No active session.")
+
+    def transfer(self, target_user, amount):
+        if self.logged_in_user:
+            if target_user in self.users and self.balances[self.logged_in_user] - amount >= -1500:
+                self.balances[self.logged_in_user] -= amount
+                self.balances[target_user] += amount
+                print(f"Transfer successful. New balance: {self.check_balance()}")
+            else:
+                print("Error: Transfer failed.")
+        else:
+            print("Error: No active session.")
+
+
+# Global user management instance
+user1 = User()
