@@ -1,23 +1,21 @@
 import json
+
 user_file = "user.json"
 
 
 class User:
     """
-    This class is aimed to create, store and check user credentials
+    Manage user registration, login, and logout.
+    Store user credentials in a JSON file for persistence.
     """
     def __init__(self):
-        self.users = self.load_users()
-        # initialise the file, load existed data
+        self.users = self.load_users()  # Load existing users
+        self.logged_in_user = None  # Track the current user session
 
     def load_users(self):
         """
-        If file is already exist, open with read mode
-        and load the data in dictionary form.
-
-        If not, error handling and return an empty dict.
-        :return: exist file or {}
-        """
+        oad user data from file, return empty dict if file is missing or invalid
+        ."""
         try:
             with open(user_file, "r") as f:
                 return json.load(f)
@@ -26,27 +24,42 @@ class User:
 
     def save_users(self):
         """
-        write mode, transfer the python dictionary 'self.users' into json form.
-        :return: user input data
+        Save current user data to file.
         """
         with open(user_file, "w") as f:
             json.dump(self.users, f, indent=4)
 
     def register(self, username, password):
+        """
+        Register new user if username is not taken.
+        """
         if username in self.users:
             print("This user name has been used.")
-            return False  # duplicate account handling
+            return False
 
         self.users[username] = password
         self.save_users()
         print("Register success!")
-        return True  # store the input in a dictionary and call the save method
+        return True
 
     def login(self, username, password):
+        """
+        Authenticate user credentials and set session.
+        """
         if username in self.users and self.users[username] == password:
-            print("Login success")
-            return True  # check credentials
+            self.logged_in_user = username
+            print(f"Login success! Welcome, {username}!")
+            return True
         else:
             print("Incorrect username or password")
-        # error message
-        
+            return False
+
+    def logout(self):
+        """
+        Clear current session if a user is logged in.
+        """
+        if self.logged_in_user:
+            print(f"User {self.logged_in_user} logged out.")
+            self.logged_in_user = None
+        else:
+            print("There is no user logged in.")
