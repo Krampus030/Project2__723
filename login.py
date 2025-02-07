@@ -2,33 +2,33 @@ import json
 
 USER_FILE = "user.json"
 
-
 class User:
     """
     Manage user authentication and balance tracking with persistent storage.
     """
 
     def __init__(self):
-        self.users = self.load_users()  # Load user credentials
+        self.users, self.balances = self.load_users()  # Load user credentials and balances
         self.logged_in_user = None  # Track active session
-        self.balances = {}  # Store user balances
 
     def load_users(self):
         """
-        Load user data from file, return empty dict if missing or invalid.
+        Load user data from file, return empty dicts if missing or invalid.
         """
         try:
             with open(USER_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                return data.get("users", {}), data.get("balances", {})
         except (FileNotFoundError, json.JSONDecodeError):
-            return {}
+            return {}, {}
 
     def save_users(self):
         """
-        Save current user data to file.
+        Save current user data, including balances, to file.
         """
+        data = {"users": self.users, "balances": self.balances}
         with open(USER_FILE, "w", encoding="utf-8") as f:
-            json.dump(self.users, f, indent=4)
+            json.dump(data, f, indent=4)
 
     def register(self, username, password, initial_deposit):
         """
@@ -73,7 +73,10 @@ class User:
         """
         Return the current balance of the logged-in user.
         """
-        return self.balances.get(self.logged_in_user, 0)
+        if self.logged_in_user:
+            return self.balances.get(self.logged_in_user, 0)
+        print("Error: No active session.")
+        return None
 
     def deposit(self, amount):
         """
@@ -81,6 +84,7 @@ class User:
         """
         if self.logged_in_user:
             self.balances[self.logged_in_user] += amount
+            self.save_users()  # Save changes to file
             print(f"Deposited {amount}. New balance: {self.check_balance()}")
         else:
             print("Error: No active session.")
@@ -92,6 +96,7 @@ class User:
         if self.logged_in_user:
             if self.balances[self.logged_in_user] - amount >= -1500:
                 self.balances[self.logged_in_user] -= amount
+                self.save_users()  # Save changes to file
                 print(f"Withdrawal successful. New balance: {self.check_balance()}")
             else:
                 print("Error: Insufficient funds.")
@@ -106,6 +111,7 @@ class User:
             if target_user in self.users and self.balances[self.logged_in_user] - amount >= -1500:
                 self.balances[self.logged_in_user] -= amount
                 self.balances[target_user] += amount
+                self.save_users()  # Save changes to file
                 print(f"Transfer successful. New balance: {self.check_balance()}")
             else:
                 print("Error: Transfer failed.")
