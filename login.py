@@ -38,6 +38,10 @@ class User:
             print("Error: Username already taken.")
             return False
 
+        if not (8 <= len(password) <= 16):
+            print("Error: Password must be between 8 and 16 characters long.")
+            return False
+
         self.users[username] = password
         self.balances[username] = initial_deposit  # Store initial balance
         self.save_users()
@@ -66,9 +70,15 @@ class User:
             print("No active user session.")
 
     def check_balance(self):
+        """
+        Return the current balance of the logged-in user.
+        """
         return self.balances.get(self.logged_in_user, 0)
 
     def deposit(self, amount):
+        """
+        Deposit funds into the logged-in user's account.
+        """
         if self.logged_in_user:
             self.balances[self.logged_in_user] += amount
             print(f"Deposited {amount}. New balance: {self.check_balance()}")
@@ -76,6 +86,9 @@ class User:
             print("Error: No active session.")
 
     def withdraw(self, amount):
+        """
+        Withdraw funds if within the allowed overdraft limit (-1500).
+        """
         if self.logged_in_user:
             if self.balances[self.logged_in_user] - amount >= -1500:
                 self.balances[self.logged_in_user] -= amount
@@ -86,6 +99,9 @@ class User:
             print("Error: No active session.")
 
     def transfer(self, target_user, amount):
+        """
+        Transfer funds to another user if balance allows.
+        """
         if self.logged_in_user:
             if target_user in self.users and self.balances[self.logged_in_user] - amount >= -1500:
                 self.balances[self.logged_in_user] -= amount
