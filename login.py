@@ -2,6 +2,7 @@ import json
 
 USER_FILE = "user.json"
 
+
 class User:
     """
     Manage user authentication and balance tracking with persistent storage.
@@ -13,22 +14,41 @@ class User:
 
     def load_users(self):
         """
-        Load user data from file, return empty dicts if missing or invalid.
+        Load user data from file and convert balances from 2's complement binary strings to decimal.
         """
         try:
             with open(USER_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("users", {}), data.get("balances", {})
+                users = data.get("users", {})
+                balances = {user: self.twos_complement_to_decimal(int(value, 2)) for user, value in data.get("balances", {}).items()}
+                return users, balances
         except (FileNotFoundError, json.JSONDecodeError):
             return {}, {}
 
     def save_users(self):
         """
-        Save current user data, including balances, to file.
+        Save current user data, converting balances to 2's complement binary strings.
         """
-        data = {"users": self.users, "balances": self.balances}
+        data = {
+            "users": self.users,
+            "balances": {user: format(self.decimal_to_twos_complement(value), '032b') for user, value in self.balances.items()}
+        }
         with open(USER_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
+
+    def decimal_to_twos_complement(self, value, bits=32):
+        """
+        Convert a decimal integer to 2's complement representation and return as integer.
+        """
+        return value & (2**bits - 1)
+
+    def twos_complement_to_decimal(self, value, bits=32):
+        """
+        Convert a 2's complement 32-bit binary integer back to decimal.
+        """
+        if value & (1 << (bits - 1)):
+            return value - (1 << bits)
+        return value
 
     def register(self, username, password, initial_deposit):
         """
@@ -71,7 +91,7 @@ class User:
 
     def check_balance(self):
         """
-        Return the current balance of the logged-in user.
+        Return the current balance of the logged-in user in decimal format.
         """
         if self.logged_in_user:
             return self.balances.get(self.logged_in_user, 0)
