@@ -53,3 +53,12 @@ class TestUser(unittest.TestCase):
         result = self.user.register("k", "22222222", 1600)
         self.assertFalse(result)  # Duplicate registration should fail
         self.assertEqual(self.user.balances["k"], 1500)  # Balance should remain unchanged
+
+    def test_login(self):
+        """
+        Check user login with valid credentials.
+        """
+        self.user.register("k", "11111111", 1600)
+        result = self.user.login("k", "11111111")
+        self.assertTrue(result)  # Login should succeed
+        self.assertEqual(self.user.logged_in_user, "k")  # Session should track the logged-in user
