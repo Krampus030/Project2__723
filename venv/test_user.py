@@ -45,4 +45,11 @@ class TestUser(unittest.TestCase):
         self.assertIn("k", self.user.users)  # User should be stored
         self.assertEqual(self.user.balances["k"], 1500)  # Initial deposit should match
 
-
+    def test_register_duplicate_user(self):
+        """
+        Ensure duplicate usernames can't be registered.
+        """
+        self.user.register("k", "11111111", 1500)
+        result = self.user.register("k", "22222222", 1600)
+        self.assertFalse(result)  # Duplicate registration should fail
+        self.assertEqual(self.user.balances["k"], 1500)  # Balance should remain unchanged
